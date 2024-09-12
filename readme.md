@@ -2,7 +2,20 @@
 
 这个自定义节点包为 ComfyUI 添加了 MiniCPM 语言模型,实现了高级文本生成和图像理解功能。
 
-## 功能特点
+## 与Flux配合使用
+![image](https://github.com/user-attachments/assets/0979f795-cfa1-49e0-a4c2-4faabfe15ced)
+
+
+## 描述图像
+### 提示词反推与短标签
+![image](https://github.com/user-attachments/assets/c707e6b8-02b4-4e44-a657-ef6c58c09d96)
+
+## 文本生成
+![image](https://github.com/user-attachments/assets/eaa09585-0ff4-4f2b-8adb-dffe6835e216)
+
+
+
+## 功能
 
 - **MiniCPM-Plus: 3-4B**: 强大的文本生成语言模型。
 - **MiniCPM-Plus: V-2.6**: 先进的视觉-语言模型,能够理解和描述图像。
@@ -27,7 +40,7 @@
 
 2. 克隆此仓库:
    ```
-   git clone https://github.com/CY-CHENYUE/comfyui-MiniCPM-Plus.git
+   git clone https://github.com/CY-CHENYUE/Comfyui-MiniCPM-Plus.git
    ```
 
 3. 重启 ComfyUI。
