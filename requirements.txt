@@ -6,6 +6,6 @@ torchvision
 numpy>=1.21.0
 sentencepiece==0.1.99
 decord
-Pillow==10.1.0
+Pillow>=10.1.0
 jsonschema
 datamodel-code-generator
