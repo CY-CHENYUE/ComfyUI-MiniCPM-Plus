@@ -30,11 +30,12 @@ class MiniCPM3_4B_Handler:
         if self.model is None or self.tokenizer is None:
             logger.info(f"Loading model {self.name}")
             try:
-                self.tokenizer = AutoTokenizer.from_pretrained(self.name, trust_remote_code=True)
+                self.tokenizer = AutoTokenizer.from_pretrained(self.local_path, trust_remote_code=True)
                 self.model = AutoModelForCausalLM.from_pretrained(
-                    self.name,
+                    self.local_path,
                     torch_dtype=torch.float16,
-                    trust_remote_code=True
+                    trust_remote_code=True,
+                    local_files_only=True  # 添加这个参数
                 ).to(self.device)
                 
                 if self.tokenizer.pad_token is None:
@@ -144,7 +145,6 @@ def check_dependencies():
         from .install import check_and_install_dependencies
         check_and_install_dependencies()
         
-        # 再次检查是否所有包都已安装
         for package in missing_packages:
             try:
                 importlib.import_module(package)
