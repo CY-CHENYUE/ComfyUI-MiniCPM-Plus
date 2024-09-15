@@ -33,17 +33,23 @@ if os.path.exists(restart_flag):
 try:
     from .minicpm3_4b_node import MiniCPM3_4B
     from .minicpm_v_2_6_node import MiniCPM_V_2_6
+    from .minicpm_v_2_6_int_4_node import MiniCPM_V_2_6_Int4
+    from .minicpm3_4b_GPTQ_int4_node import MiniCPM3_4B_GPTQ_Int4
     from .text_display_node import TextDisplay
 
     NODE_CLASS_MAPPINGS = {
-        "MiniCPM_V_2_6": MiniCPM_V_2_6,  
+        "MiniCPM_V_2_6": MiniCPM_V_2_6,
+        "MiniCPM_V_2_6_Int4": MiniCPM_V_2_6_Int4,    
         "MiniCPM3_4B": MiniCPM3_4B,
+        "MiniCPM3_4B_GPTQ_Int4": MiniCPM3_4B_GPTQ_Int4,
         "TextDisplay": TextDisplay
     }
 
     NODE_DISPLAY_NAME_MAPPINGS = {
         "MiniCPM_V_2_6": "MiniCPM-Plus: V-2.6", 
+        "MiniCPM_V_2_6_Int4": "MiniCPM-Plus: V-2.6_Int4",
         "MiniCPM3_4B": "MiniCPM-Plus: 3-4B", 
+        "MiniCPM3_4B_GPTQ_Int4": "MiniCPM-Plus: 3-4B-GPTQ-Int4",
         "TextDisplay": "MiniCPM-Plus: TextDisplay"
     }
 except Exception as e:
