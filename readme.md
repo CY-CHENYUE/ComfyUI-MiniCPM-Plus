@@ -24,6 +24,14 @@
 - 保持与原始模型相近的性能
 - 适用于资源受限的环境
 
+### 例子
+#### 提示词生成
+![image](https://github.com/user-attachments/assets/28bb9b51-d8b0-49ed-ba43-d51e1d65bd0a)
+
+#### 生成提示词用于Flux出图
+![image](https://github.com/user-attachments/assets/e6cbc806-4701-4fdc-8105-219afcc4eb40)
+
+
 ### 2. MiniCPM-V-2.6 和 MiniCPM-V-2.6-INT4
 
 这两个节点都是视觉-语言模型，能够处理图像和文本的多模态任务。
@@ -46,6 +54,15 @@
 - INT4 量化版本，显存占用更低（约 7GB）
 - 保持与原始 MiniCPM-V-2.6 相同的功能
 - 适用于中端显卡和资源受限的环境
+
+### 例子
+#### 图片提示词反推长文本描述+短标签
+![image](https://github.com/user-attachments/assets/a5ae7944-d7a6-4ef4-9818-aa4103a9f723)
+
+#### 图片提示词反推用于Flux出图
+![image](https://github.com/user-attachments/assets/783ed50d-e4a6-423e-8cd3-c94e525c5dfa)
+
+
 
 ## 使用说明
 
