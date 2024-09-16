@@ -66,12 +66,12 @@
 
 ## 使用说明
 
-1. 在 ComfyUI 中，您可以找到这四个新的节点：`MiniCPM3-4B`、`MiniCPM3-4B-GPTQ-Int4`、`MiniCPM-V-2.6` 和 `MiniCPM-V-2.6-INT4`。
+1. 在 ComfyUI 中，可以找到这四个新的节点：`MiniCPM3-4B`、`MiniCPM3-4B-GPTQ-Int4`、`MiniCPM-V-2.6` 和 `MiniCPM-V-2.6-INT4`。
 2. 对于文本生成任务：
-   - 如果您有足够的显存，使用 `MiniCPM3-4B` 节点以获得最佳性能。
+   - 如果足够的显存，使用 `MiniCPM3-4B` 节点以获得最佳性能。
    - 如果显存有限，使用 `MiniCPM3-4B-GPTQ-Int4` 节点以在性能和资源使用之间取得平衡。
 3. 对于图像相关任务：
-   - 如果您有高性能GPU，使用 `MiniCPM-V-2.6` 节点以获得最佳效果。
+   - 如果高性能GPU，使用 `MiniCPM-V-2.6` 节点以获得最佳效果。
    - 如果使用中端显卡或资源受限，选择 `MiniCPM-V-2.6-INT4` 节点。
 4. 所有节点都支持自定义参数，如 max_new_tokens、temperature、top_p 和 top_k。
 5. 视觉模型节点还支持关键词提取功能，可以通过 `extract_keywords` 参数启用。
@@ -86,7 +86,7 @@
 
 ### 方法1: 使用 ComfyUI-Manager
 
-1. 确保你已经安装了 [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)。
+1. 确保已经安装了 [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)。
 2. 在 ComfyUI 界面中,打开 "Manager" 选项卡。
 3. 在搜索框中输入 "MiniCPM-Plus"。
 4. 找到 "MiniCPM-Plus" 并点击 "Install" 按钮。
@@ -94,7 +94,7 @@
 
 ### 方法2: 手动安装
 
-1. 进入您的 ComfyUI 自定义节点目录:
+1. 进入 ComfyUI 自定义节点目录:
    ```
    cd ComfyUI/custom_nodes/
    ```
