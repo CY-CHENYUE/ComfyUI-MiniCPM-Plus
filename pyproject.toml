@@ -10,6 +10,6 @@ Repository = "https://github.com/CY-CHENYUE/ComfyUI-MiniCPM-Plus"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "@cychenyue"
 DisplayName = "ComfyUI-MiniCPM-Plus"
 Icon = ""
