@@ -7,27 +7,10 @@
 
 import os
 import sys
-import importlib
-
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
-
-
-from .install import check_and_install_dependencies
-
-newly_installed = check_and_install_dependencies()
-
-
-restart_flag = os.path.join(current_dir, '.restart_required')
-if os.path.exists(restart_flag):
-    if newly_installed:
-        print("New dependencies were installed. Please restart ComfyUI for them to take effect.")
-        os.remove(restart_flag)  
-        sys.exit(0)  
-    else:
-        os.remove(restart_flag) 
 
 
 try:

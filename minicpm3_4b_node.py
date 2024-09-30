@@ -3,21 +3,28 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import os
 import folder_paths
 import logging
+import warnings
 import re
 from huggingface_hub import snapshot_download
-import importlib
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 logger = logging.getLogger(__name__)
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 class MiniCPM3_4B_Handler:
     def __init__(self):
-        self.name = "openbmb/MiniCPM3-4B"
+        self.name = "openbmb/MiniCPM3-4B" 
         self.local_path = os.path.join(folder_paths.models_dir, "MiniCPM", "MiniCPM3-4B")
         self.tokenizer = None
         self.model = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def load_model(self):
+        from .install import check_and_install_dependencies
+        check_and_install_dependencies()
+
         if not os.path.exists(self.local_path) or not os.listdir(self.local_path):
             logger.info(f"Model not found locally. Downloading {self.name} from Hugging Face...")
             try:
@@ -28,20 +35,19 @@ class MiniCPM3_4B_Handler:
                 raise ImportError(f"Failed to download {self.name}. Error: {str(e)}")
 
         if self.model is None or self.tokenizer is None:
-            logger.info(f"Loading model {self.name}")
             try:
                 self.tokenizer = AutoTokenizer.from_pretrained(self.local_path, trust_remote_code=True)
                 self.model = AutoModelForCausalLM.from_pretrained(
                     self.local_path,
                     torch_dtype=torch.float16,
+                    device_map=self.device,
                     trust_remote_code=True,
-                    local_files_only=True  # 添加这个参数
-                ).to(self.device)
+                    low_cpu_mem_usage=True
+                )
                 
                 if self.tokenizer.pad_token is None:
                     self.tokenizer.pad_token = self.tokenizer.eos_token
                 
-                logger.info(f"Model {self.name} loaded successfully.")
             except Exception as e:
                 logger.error(f"Error loading model: {str(e)}")
                 raise ImportError(f"Failed to load {self.name}. Error: {str(e)}")
@@ -85,18 +91,11 @@ class MiniCPM3_4B:
             {'role': 'user', 'content': combined_prompt}
         ]
 
-        inputs = self.model_handler.tokenizer.apply_chat_template(
+        model_inputs = self.model_handler.tokenizer.apply_chat_template(
             msgs,
             return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=max_new_tokens
-        )
-
-        attention_mask = (inputs != self.model_handler.tokenizer.pad_token_id).long()
-
-        inputs = inputs.to(self.model_handler.device)
-        attention_mask = attention_mask.to(self.model_handler.device)
+            add_generation_prompt=True
+        ).to(self.model_handler.device)
 
         generation_config = {
             "max_new_tokens": max_new_tokens,
@@ -105,18 +104,16 @@ class MiniCPM3_4B:
             "top_k": top_k,
             "pad_token_id": self.model_handler.tokenizer.pad_token_id,
             "eos_token_id": self.model_handler.tokenizer.eos_token_id,
-            "use_cache": True,
         }
 
-
         with torch.no_grad():
-            outputs = self.model_handler.model.generate(
-                inputs,
-                attention_mask=attention_mask,
+            model_outputs = self.model_handler.model.generate(
+                model_inputs,
                 **generation_config
             )
 
-        res = self.model_handler.tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True)
+        output_token_ids = model_outputs[0][len(model_inputs[0]):]
+        res = self.model_handler.tokenizer.decode(output_token_ids, skip_special_tokens=True)
         res = self.post_process_response(res)
         
         return (res,)
@@ -128,30 +125,3 @@ class MiniCPM3_4B:
         response = re.sub(r'\n(###\s*)?(?:Human|User):\s*$', '', response, flags=re.IGNORECASE)
         response = re.sub(r'\n\s*\n', '\n\n', response)
         return response.strip()
-
-def check_dependencies():
-    missing_packages = []
-    required_packages = ['PIL', 'torch', 'transformers', 'huggingface_hub', 'numpy', 'jsonschema', 'datamodel_code_generator']
-
-    for package in required_packages:
-        try:
-            importlib.import_module(package)
-        except ImportError:
-            missing_packages.append(package)
-
-    if missing_packages:
-        logger.warning(f"Missing required packages: {', '.join(missing_packages)}.")
-        logger.info("Attempting to install missing packages...")
-        from .install import check_and_install_dependencies
-        check_and_install_dependencies()
-        
-        for package in missing_packages:
-            try:
-                importlib.import_module(package)
-                logger.info(f"Successfully installed and imported {package}")
-            except ImportError:
-                logger.error(f"Failed to install or import {package}")
-                raise ImportError(f"Failed to install required package: {package}. Please install it manually.")
-    
-    # logger.info("All required packages are installed.")
-

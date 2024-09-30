@@ -2,49 +2,39 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 import os
 import folder_paths
-import logging
 import re
 from huggingface_hub import snapshot_download
-import importlib
 from PIL import Image
 import numpy as np
-import bitsandbytes as bnb
+import logging
+import warnings
+
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 logger = logging.getLogger(__name__)
-
-def check_dependencies():
-    missing_packages = []
-    required_packages = ['PIL', 'torch', 'transformers', 'huggingface_hub', 'numpy', 'sentencepiece', 'accelerate', 'bitsandbytes']
-
-    for package in required_packages:
-        try:
-            importlib.import_module(package)
-        except ImportError:
-            missing_packages.append(package)
-
-    if missing_packages:
-        logger.warning(f"Missing required packages: {', '.join(missing_packages)}.")
-        logger.info("Attempting to install missing packages...")
-        from .install import check_and_install_dependencies
-        check_and_install_dependencies()
-        
-        for package in missing_packages:
-            try:
-                importlib.import_module(package)
-                logger.info(f"Successfully installed and imported {package}")
-            except ImportError:
-                logger.error(f"Failed to install or import {package}")
-                raise ImportError(f"Failed to install required package: {package}. Please install it manually.")
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 class MiniCPM_V_2_6_Int4_Handler:
+    dependencies_checked = False
+
     def __init__(self):
         self.name = "openbmb/MiniCPM-V-2_6-int4"
         self.local_path = os.path.join(folder_paths.models_dir, "MiniCPM", "MiniCPM-V-2_6-int4")
         self.tokenizer = None
         self.model = None
 
+    @classmethod
+    def check_dependencies(cls):
+        if not cls.dependencies_checked:
+            from .install import check_and_install_dependencies
+            if check_and_install_dependencies():
+                logger.info("Dependencies were installed or updated. Please restart ComfyUI for changes to take effect.")
+            cls.dependencies_checked = True
+
     def load_model(self):
-        check_dependencies()
+        self.check_dependencies()
         
         if not os.path.exists(self.local_path) or not os.listdir(self.local_path):
             logger.info(f"Model not found locally. Downloading {self.name} from Hugging Face...")
@@ -56,12 +46,18 @@ class MiniCPM_V_2_6_Int4_Handler:
                 raise ImportError(f"Failed to download {self.name}. Error: {str(e)}")
 
         if self.model is None or self.tokenizer is None:
-            logger.info(f"Loading model {self.name}")
+            # logger.info(f"Loading model {self.name}")
             try:
                 self.tokenizer = AutoTokenizer.from_pretrained(self.local_path, trust_remote_code=True)
-                self.model = AutoModel.from_pretrained(self.local_path, trust_remote_code=True)
-                self.model.eval()
-                logger.info(f"Model {self.name} loaded successfully.")
+                
+                self.model = AutoModel.from_pretrained(
+                    self.local_path,
+                    trust_remote_code=True,
+                    low_cpu_mem_usage=True
+                )
+                
+                self.model = self.model.eval()
+                # logger.info(f"Model {self.name} loaded successfully.")
             except Exception as e:
                 logger.error(f"Error loading model: {str(e)}")
                 raise RuntimeError(f"Failed to load {self.name}. Error: {str(e)}")

@@ -1,51 +1,64 @@
 import os
 import sys
 import subprocess
-import importlib.util
+import importlib
 import logging
+from packaging import version
+import pkg_resources
 
 # 设置日志记录器
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def get_installed_version(package_name):
+    try:
+        return pkg_resources.get_distribution(package_name).version
+    except pkg_resources.DistributionNotFound:
+        return None
+
 def check_and_install_dependencies():
+    # 获取当前文件的目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
+    # requirements.txt 文件的路径
     requirements_path = os.path.join(current_dir, 'requirements.txt')
     
-    try:
-        with open(requirements_path, 'r') as f:
-            dependencies = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        logger.error(f"Error: 'requirements.txt' not found at {requirements_path}")
-        return False
-
-    newly_installed = False
-    for package in dependencies:
-        package_name = package.split("==")[0].split(">=")[0]
-        if not package_installed(package_name):
-            try:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", package, "--no-warn-script-location"],
-                                      stdout=subprocess.DEVNULL)
-                newly_installed = True
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Error installing {package}: {e}")
-                logger.error(f"Please install {package} manually.")
-
-    if newly_installed:
-        logger.info("New dependencies were installed. It is recommended to restart ComfyUI for changes to take full effect.")
+    changes_made = False
     
-    return newly_installed
+    # 读取 requirements.txt 文件
+    with open(requirements_path, 'r') as f:
+        requirements = f.read().splitlines()
+    
+    for requirement in requirements:
+        # 忽略空行和注释
+        if not requirement or requirement.startswith('#'):
+            continue
+        
+        # 解析包名和版本
+        parts = requirement.split('==')
+        package_name = parts[0].strip()
+        required_version = parts[1].strip() if len(parts) > 1 else None
+        
+        installed_version = get_installed_version(package_name)
+        
+        if installed_version is None:
+            logger.info(f"Installing new package: {package_name}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", requirement], 
+                                  stdout=subprocess.DEVNULL, 
+                                  stderr=subprocess.DEVNULL)
+            changes_made = True
+        elif required_version and version.parse(installed_version) < version.parse(required_version):
+            logger.info(f"Updating package: {package_name} from {installed_version} to {required_version}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", requirement], 
+                                  stdout=subprocess.DEVNULL, 
+                                  stderr=subprocess.DEVNULL)
+            changes_made = True
+        else:
+            logger.debug(f"Package {package_name} is already up to date (installed: {installed_version}).")
+    
+    return changes_made
 
 def package_installed(package_name):
-    try:
-        importlib.import_module(package_name)
-        return True
-    except ImportError:
-        return False
+    return get_installed_version(package_name) is not None
 
 if __name__ == "__main__":
-    newly_installed = check_and_install_dependencies()
-    if newly_installed:
-        logger.info("Please restart ComfyUI for the changes to take effect.")
-    else:
-        logger.info("No new packages were installed.")
+    check_and_install_dependencies()
