@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-minicpm-plus"
 description = "Custom nodes for MiniCPM language models in ComfyUI. Provides advanced text generation and image understanding functions."
-version = "1.0.1"
+version = "1.0.2"
 license = {file = "LICENSE"}
 dependencies = ["transformers", "torch", "tqdm", "huggingface_hub", "torchvision", "numpy>=1.21.0", "sentencepiece==0.1.99", "decord", "Pillow>=10.1.0", "jsonschema", "datamodel-code-generator", "accelerate>=0.30.1", "bitsandbytes>=0.43.1", "optimum>=1.16.1", "auto-gptq>=0.5.1"]
 
