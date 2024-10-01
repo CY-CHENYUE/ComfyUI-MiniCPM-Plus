@@ -103,10 +103,7 @@
    ```
    git clone https://github.com/CY-CHENYUE/Comfyui-MiniCPM-Plus.git
    ```
-
-3. 重启 ComfyUI。
-
-所需的依赖项将在首次使用时自动安装。
+所需的依赖项将在首次使用时自动安装，安装后部分依赖需要重启ComfyUI后才能生效。
 
 
 ## 许可证
