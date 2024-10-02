@@ -3,49 +3,55 @@ import { ComfyWidgets } from "../../scripts/widgets.js";
 
 app.registerExtension({
     name: "org.example.TextDisplay",
-    nodeType: "TextDisplay",
-    nodeData: {
-        "name": "TextDisplay",
-        "display_name": "Display Text",
-        "category": "utils",
-        "description": "Displays input text",
-        "input": {
-            "text": ["STRING", {"multiline": true}]
-        },
-        "output": null
-    },
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        const onNodeCreated = nodeType.prototype.onNodeCreated;
-        nodeType.prototype.onNodeCreated = function() {
-            if (onNodeCreated) {
-                onNodeCreated.apply(this, arguments);
-            }
-            this.textWidget = null;
-        };
-
-        const onExecuted = function(message) {
-            if (message && message.text !== undefined) {
-                const text = Array.isArray(message.text) ? message.text.join('') : message.text;
-                if (!this.textWidget) {
-                    // 动态创建 textarea widget
-                    this.textWidget = ComfyWidgets["STRING"](this, "", ["STRING", { multiline: true }], app).widget;
-                    this.textWidget.inputEl.style.fontSize = "12px";
-                    this.textWidget.inputEl.style.height = "100%";
-                    this.textWidget.inputEl.style.width = "100%";
-                    this.textWidget.inputEl.style.backgroundColor = "#2a2a2a";
-                    this.textWidget.inputEl.style.color = "#ffffff";
-                    this.textWidget.inputEl.readOnly = true;
-                    this.textWidget.inputEl.style.overflowY = "auto";
+        if (nodeData.name === "TextDisplay") {
+            function populate(text) {
+                if (this.widgets) {
+                    for (let i = 1; i < this.widgets.length; i++) {
+                        this.widgets[i].onRemove?.();
+                    }
+                    this.widgets.length = 1;
                 }
-                this.textWidget.value = text;
-                this.textWidget.inputEl.value = text;
-                this.setSize([350, 200]);
-            }
-            this.setDirtyCanvas(true);
-        };
 
-        Object.assign(nodeType.prototype, {
-            onExecuted
-        });
+                // 确保文本是字符串，如果是数组则合并
+                const displayText = Array.isArray(text) ? text.join('') : String(text);
+
+                const w = ComfyWidgets["STRING"](this, "", ["STRING", { multiline: true }], app).widget;
+                w.inputEl.readOnly = true;
+                w.inputEl.style.opacity = 0.6;
+                w.inputEl.style.whiteSpace = 'pre-wrap';
+                w.inputEl.style.wordBreak = 'break-word';
+                w.inputEl.style.overflowWrap = 'break-word';
+                w.value = displayText;
+
+                requestAnimationFrame(() => {
+                    const sz = this.computeSize();
+                    if (sz[0] < this.size[0]) {
+                        sz[0] = this.size[0];
+                    }
+                    if (sz[1] < this.size[1]) {
+                        sz[1] = this.size[1];
+                    }
+                    this.onResize?.(sz);
+                    app.graph.setDirtyCanvas(true, false);
+                });
+            }
+
+            const onExecuted = nodeType.prototype.onExecuted;
+            nodeType.prototype.onExecuted = function (message) {
+                onExecuted?.apply(this, arguments);
+                if (message && message.text !== undefined) {
+                    populate.call(this, message.text);
+                }
+            };
+
+            const onConfigure = nodeType.prototype.onConfigure;
+            nodeType.prototype.onConfigure = function () {
+                onConfigure?.apply(this, arguments);
+                if (this.widgets_values?.length) {
+                    populate.call(this, this.widgets_values[0]);
+                }
+            };
+        }
     },
 });
