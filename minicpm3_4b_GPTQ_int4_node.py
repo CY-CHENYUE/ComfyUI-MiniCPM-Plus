@@ -21,6 +21,7 @@ class MiniCPM3_4B_GPTQ_Int4_Handler:
         self.tokenizer = None
         self.model = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.use_cuda = torch.cuda.is_available()
 
     def load_model(self):
         from .install import check_and_install_dependencies
@@ -39,24 +40,13 @@ class MiniCPM3_4B_GPTQ_Int4_Handler:
             try:
                 self.tokenizer = AutoTokenizer.from_pretrained(self.local_path, trust_remote_code=True)
                 
-                # 尝试使用 optimum 加载模型
-                try:
-                    from optimum.gptq import GPTQForCausalLM
-                    self.model = GPTQForCausalLM.from_pretrained(
-                        self.local_path,
-                        torch_dtype=torch.float16,
-                        device_map=self.device,
-                        trust_remote_code=True
-                    )
-                except ImportError:
-                    # 如果 optimum 不可用，回退到使用标准的 AutoModelForCausalLM
-                    logger.warning("optimum library not found. Falling back to standard AutoModelForCausalLM.")
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        self.local_path,
-                        torch_dtype=torch.float16,
-                        device_map=self.device,
-                        trust_remote_code=True
-                    )
+                # 直接使用 AutoModelForCausalLM
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.local_path,
+                    torch_dtype=torch.float16 if self.use_cuda else torch.float32,
+                    device_map='auto' if self.use_cuda else None,
+                    trust_remote_code=True
+                )
                 
                 if self.tokenizer.pad_token is None:
                     self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -77,9 +67,9 @@ class MiniCPM3_4B_GPTQ_Int4:
                 "user_promptB": ("STRING", {"multiline": True}),
             },
             "required": {
-                "max_new_tokens": ("INT", {"default": 300, "min": 1, "max": 4096}),
+                "max_new_tokens": ("INT", {"default": 300, "min": 1, "max": 3000}),
                 "temperature": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 2.0, "step": 0.1}),
-                "top_p": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 1.0, "step": 0.1}),
+                "top_p": ("FLOAT", {"default": 0.8, "min": 0.1, "max": 1.0, "step": 0.1}),
                 "top_k": ("INT", {"default": 50, "min": 1, "max": 1000}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
@@ -120,10 +110,29 @@ class MiniCPM3_4B_GPTQ_Int4:
         }
 
         with torch.no_grad():
-            model_outputs = self.model_handler.model.generate(
-                model_inputs,
-                **generation_config
-            )
+            try:
+                # 添加安全生成函数
+                def safe_generate(**kwargs):
+                    outputs = self.model_handler.model.generate(**kwargs)
+                    if hasattr(outputs, 'scores') and outputs.scores is not None:
+                        for score in outputs.scores:
+                            score.data = torch.clamp(score.data, min=1e-9, max=1e9)
+                            score.data = torch.nan_to_num(score.data, nan=1e-9, posinf=1e9, neginf=1e-9)
+                    return outputs
+
+                model_outputs = safe_generate(
+                    input_ids=model_inputs,
+                    max_new_tokens=max_new_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    top_k=top_k,
+                    pad_token_id=self.model_handler.tokenizer.pad_token_id,
+                    eos_token_id=self.model_handler.tokenizer.eos_token_id,
+                )
+
+            except Exception as e:
+                logger.error(f"Error during generation: {str(e)}")
+                return ("Error: Failed to generate text. Please try again with different parameters.",)
 
         output_token_ids = model_outputs[0][len(model_inputs[0]):]
         res = self.model_handler.tokenizer.decode(output_token_ids, skip_special_tokens=True)

@@ -64,9 +64,9 @@ class MiniCPM3_4B:
                 "user_promptB": ("STRING", {"multiline": True}),
             },
             "required": {
-                "max_new_tokens": ("INT", {"default": 300, "min": 1, "max": 4096}),
+                "max_new_tokens": ("INT", {"default": 300, "min": 1, "max": 3000}),
                 "temperature": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 2.0, "step": 0.1}),
-                "top_p": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 1.0, "step": 0.1}),
+                "top_p": ("FLOAT", {"default": 0.8, "min": 0.1, "max": 1.0, "step": 0.1}),
                 "top_k": ("INT", {"default": 50, "min": 1, "max": 1000}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
